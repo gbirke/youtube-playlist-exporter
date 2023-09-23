@@ -23,3 +23,4 @@ This is a plugin that exports YouTube playlists to text.
 - [ ] Options UI to configure different templates
 - [ ] Save to file
 - [ ] I18N
+- [ ] Allow playlist collection from multiple tabs
