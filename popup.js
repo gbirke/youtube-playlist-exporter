@@ -1,14 +1,24 @@
-function setStatusMessage(message, severity) {
-	const statusElement = document.getElementById('status');
-	if (message === '') {
-		statusElement.classList.add('hidden');
-	} else {
-		statusElement.innerHTML = message;
-		statusElement.classList.remove('hidden');
-		if (severity) {
-			statusElement.classList.add(`status-${severity}`);
-		}
+import van from "./libs/van-1.2.1.min.js"
+
+const { p } = van.tags;
+
+const appStatus = van.state({ message: '', severity: null });
+
+const Status = () => {
+	const classes = ['status'];
+	if (appStatus.val.severity) {
+		classes.push(`status-${appStatus.val.severity}`);
 	}
+	if (appStatus.val.message === '') {
+		classes.push('hidden');
+	}
+	return p({class: classes.join(' ')}, appStatus.val.message);
+}
+
+van.add(document.getElementById('status'), Status);
+
+function setStatusMessage(message, severity) {
+	appStatus.val = { message, severity };
 }
 
 function renderPlaylistResult(response) {
