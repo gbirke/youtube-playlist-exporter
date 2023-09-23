@@ -16,6 +16,6 @@
 }
 
 .playlist-result {
-	white-space: pre-wrap;
+	white-space: pre;
 	overflow: auto;
 }
