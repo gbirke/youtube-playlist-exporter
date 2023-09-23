@@ -1,7 +1,22 @@
+function setStatusMessage(message, severity) {
+	const statusElement = document.getElementById('status');
+	if (message === '') {
+		statusElement.classList.add('hidden');
+	} else {
+		statusElement.innerHTML = message;
+		statusElement.classList.remove('hidden');
+		if (severity) {
+			statusElement.classList.add(`status-${severity}`);
+		}
+	}
+}
 
 function renderPlaylistResult(response) {
+	if (!response) {
+		setStatusMessage('Content script returned empty response', 'error');
+	}
 	if (response.status === 'ERROR') {
-		document.getElementById('playlist').innerHTML = 'Error: ' + response.message;
+		setStatusMessage(response.message, 'error');
 		return;
 	}
 	var playlistArea = document.getElementById('playlist');
@@ -20,5 +35,11 @@ document.getElementById('export').addEventListener('click', function() {
 	});
 });
 
-
+chrome.runtime.onMessage.addListener(function(request) {
+	switch (request.type) {
+		case 'status':
+			setStatusMessage(request.message, request.severity??null);
+			break;
+	}
+});
 

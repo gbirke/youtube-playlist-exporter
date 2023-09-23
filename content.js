@@ -80,12 +80,22 @@ async function loadFullPlaylist( onLoaded ) {
 
 	const playlistCountElement = document.querySelector(PLAYLIST_COUNT_SELECTOR);
 	if (!playlistCountElement) {
-		console.log('Playlist count element not found');
+		chrome.runtime.sendMessage({
+			type: 'status',
+			message: 'Playlist count element not found',
+			severity: 'warning',
+		});
+		onLoaded();
 		return;
 	}
 	const playlistCount = parseInt(playlistCountElement.innerText);
 	if (isNaN(playlistCount)) {
-		console.log('Playlist count is NaN');
+		chrome.runtime.sendMessage({
+			type: 'status',
+			message: 'Playlist count element did not contain a number',
+			severity: 'warning',
+		});
+		onLoaded();
 		return;
 	}
 
@@ -126,7 +136,6 @@ async function loadFullPlaylist( onLoaded ) {
 		// even when they are not shown in the list
 		if (chunksLoaded >= chunksToLoad) {
 			// TODO send message to background.js to notify user that loading the playlist has finished loading (to hide progress bar)
-			console.log('Playlist loaded');
 			onLoaded();
 			return;
 		}
@@ -160,7 +169,6 @@ function onGetPlaylistData(sendResponse) {
 	if (window.location.href.includes('playlist')) {
 		loadFullPlaylist(() => {
 			const items = getPlaylistData();
-			console.log(items);
 			sendResponse( {
 				status: 'OK',
 				items: items,
@@ -168,10 +176,12 @@ function onGetPlaylistData(sendResponse) {
 		} )
 	}
 	else {
+		console.log('No playlist found on page, sending response');
 		sendResponse( {
 			status: 'ERROR',
-			message: 'Not a playlist',
+			message: 'No playlist found on page',
 		});
+		console.log('Response sent');
 	}
 }
 
