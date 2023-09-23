@@ -1,6 +1,8 @@
 
 const PLAYLIST_ITEM_SELECTOR = 'ytd-playlist-video-renderer';
-const PLAYLIST_COUNT_SELECTOR = 'ytd-playlist-byline-renderer .metadata-stats yt-formatted-string:first-child span';
+const PLAYLIST_COUNT_SELECTOR = 'ytd-playlist-byline-renderer .metadata-stats yt-formatted-string span';
+
+const YT_CHUNK_SIZE = 100;
 
 function durationToSeconds(duration) {
 	const parts = duration.split(':');
@@ -69,6 +71,70 @@ const ITEM_EXTRACTORS = [
 	}
 ]
 
+async function loadFullPlaylist( onLoaded ) {
+	const MAX_POLL_TIME = 5000;
+	const POLL_INTERVAL = 100;
+
+	// TODO replace console.logs in error conditions with messages to background.js
+	// Wen can try to load the playlist to make the extension more robust, but we should notify the user that something went wrong
+
+	const playlistCountElement = document.querySelector(PLAYLIST_COUNT_SELECTOR);
+	if (!playlistCountElement) {
+		console.log('Playlist count element not found');
+		return;
+	}
+	const playlistCount = parseInt(playlistCountElement.innerText);
+	if (isNaN(playlistCount)) {
+		console.log('Playlist count is NaN');
+		return;
+	}
+
+	let playlistItems = document.querySelectorAll(PLAYLIST_ITEM_SELECTOR);
+	if (playlistItems.length >= playlistCount) {
+		onLoaded();
+		return;
+	}
+
+	// TODO send send number of chunks to load to background.js (so it can display progress bar). Default chunk size is 100
+
+	let pollTime = 0;
+	let lastCount = 0;
+	let lastPollTime = Date.now();
+	const chunksToLoad = Math.ceil(playlistCount / YT_CHUNK_SIZE);
+	while (pollTime < MAX_POLL_TIME) {
+		const playlistItems = document.querySelectorAll(PLAYLIST_ITEM_SELECTOR);
+		const chunksLoaded = Math.ceil(playlistItems.length / YT_CHUNK_SIZE);
+		if ( playlistItems.length > lastCount ) {
+			const lastElement = playlistItems[playlistItems.length - 1];
+			lastElement.scrollIntoView();
+			lastCount = playlistItems.length;
+
+			// Decrease poll time by a bit to allow for really long playlists
+			const currentTime = Date.now();
+			const timeSinceLastLengthUpdate = currentTime - lastPollTime;
+			pollTime = Math.min(0, (pollTime - timeSinceLastLengthUpdate) / 2);
+			lastPollTime = currentTime;
+			// TODO send update to background.js with current chunk size and time elapsed, so that it can update the progress bar
+			console.log(`Loaded ${playlistItems.length}, chunk ${chunksLoaded}/${chunksToLoad}`);
+		}
+
+		await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL));
+		pollTime += POLL_INTERVAL;
+		
+		// Divide by 100 to avoid timeouts when youtube hides private videos
+		// playlistCount is the number of videos in the playlist, but that includes private videos,
+		// even when they are not shown in the list
+		if (chunksLoaded >= chunksToLoad) {
+			// TODO send message to background.js to notify user that loading the playlist has finished loading (to hide progress bar)
+			console.log('Playlist loaded');
+			onLoaded();
+			return;
+		}
+	}
+	// TODO send message to background.js to notify user that loading the playlist took too long
+	console.log('Playlist not loaded in time');
+	onLoaded();
+}
 
 function getPlaylistData() {
 	const playlistElements = document.querySelectorAll(PLAYLIST_ITEM_SELECTOR);
@@ -90,23 +156,30 @@ function getPlaylistData() {
 	return playlistItems;
 }
 
-
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-	// TODO: Check if message is from the extension, checking sender
-	if (message.type === 'getPlaylistData') {
-		if (window.location.href.includes('playlist')) {
+function onGetPlaylistData(sendResponse) {
+	if (window.location.href.includes('playlist')) {
+		loadFullPlaylist(() => {
 			const items = getPlaylistData();
 			console.log(items);
 			sendResponse( {
 				status: 'OK',
 				items: items,
 			});
-		}
-		else {
-			sendResponse( {
-				status: 'ERROR',
-				message: 'Not a playlist',
-			});
-		}
+		} )
+	}
+	else {
+		sendResponse( {
+			status: 'ERROR',
+			message: 'Not a playlist',
+		});
+	}
+}
+
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+	// TODO: Check if message is from the extension, checking sender
+	if (message.type === 'getPlaylistData') {
+		onGetPlaylistData(sendResponse);
+		return true;
 	}
 });
