@@ -1,0 +1,28 @@
+{
+	"manifest_version": 3,
+	"name": "Export YT Watch Later",
+	"version": "1.0",
+	"description": "Export YT Watch Later",
+	"permissions": [
+		"activeTab",
+		"scripting",
+		"clipboardWrite"
+	],
+	"content_scripts": [
+		{
+			"matches": [
+				"https://www.youtube.com/*"
+			],
+			"js": [
+				"content.js"
+			],
+			"world": "ISOLATED"
+		}
+	],
+	"background": {
+		"service_worker": "background.js"
+	},
+	"action": {
+
+	}
+}
