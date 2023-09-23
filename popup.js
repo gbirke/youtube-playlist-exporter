@@ -4,19 +4,37 @@ const { p, select, option, button } = van.tags;
 
 const templates = [
 	{ label: 'URL list', template: "{{url}}\n" },
-	{ label: 'Markdown', template: "- [{{title}}]({{url}})\n" },
+	{ 
+		label: 'Markdown', 
+		template: "- [{{title}}]({{url}})\n",
+		filter: item => ({...item, title: item.title.replace(/\[/g, '\\[').replace(/\]/g, '\\]')}),
+	},
 	{ 
 		label: 'CSV',
 		template: "{{title}},{{url}},{{duration}},{{channel}},{{channelLink}}\n",
 		prefix: 'title,url,duration,channel,channelLink\n',
+		filter: item => {
+			return Object.keys(item).reduce((newItem, key) => {
+				if ( typeof item[key] === 'string' && ( item[key].indexOf(',') > -1 || item[key].indexOf('"') > -1 ) ) {
+					newItem[key] = `"${item[key].replace(/"/g, '""')}"`
+				} else {
+					newItem[key] = item[key];
+				}
+				return newItem;
+			}, {});
+		},
 	},
 ];
 
 
-function renderTemplate(template, data) {
-	let text = template;
-	for (const key in data) {
-		text = text.replace(new RegExp(`{{${key}}}`, 'g'), data[key]);
+function renderTemplate(templateObject, data) {
+	let text = templateObject.template;
+	let sanitizedData = data;
+	if (templateObject.filter) {
+		sanitizedData = templateObject.filter(Object.assign({}, data));
+	}
+	for (const key in sanitizedData) {
+		text = text.replace(new RegExp(`{{${key}}}`, 'g'), sanitizedData[key]);
 	}
 	return text;
 }
@@ -45,7 +63,8 @@ const Status = () => {
 
 const TemplateSelector = () => {
 	return select({value: templateIndex.val, onchange: e => templateIndex.val = e.target.value},
-		templates.map((template, index) => option({value: index}, template.label))
+		// We have to compare with == because the value from the store might be an object, posing as a number
+		templates.map((template, index) => option({value: index, selected: index == templateIndex.val }, template.label))
 	);
 }
 
@@ -74,8 +93,10 @@ function renderPlaylistResult(response) {
 		return;
 	}
 	setStatusMessage('');
-	var playlistArea = document.getElementById('playlist');
-	playlistArea.value = response.items.map(item => renderTemplate(templates[templateIndex.val].template, item)).join('');
+	const playlistArea = document.getElementById('playlist');
+	const template = templates[templateIndex.val];
+	const prefix = template.prefix??'';
+	playlistArea.value = prefix + response.items.map(item => renderTemplate(template, item)).join('');
 }
 
 
