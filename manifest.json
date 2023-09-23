@@ -15,8 +15,7 @@
 			],
 			"js": [
 				"content.js"
-			],
-			"world": "ISOLATED"
+			]
 		}
 	],
 	"action": {
