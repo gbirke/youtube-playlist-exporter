@@ -71,13 +71,7 @@ const ITEM_EXTRACTORS = [
 	}
 ]
 
-async function loadFullPlaylist( onLoaded ) {
-	const MAX_POLL_TIME = 5000;
-	const POLL_INTERVAL = 100;
-
-	// TODO replace console.logs in error conditions with messages to background.js
-	// Wen can try to load the playlist to make the extension more robust, but we should notify the user that something went wrong
-
+function getPlaylistCountFromDomElement() {
 	const playlistCountElement = document.querySelector(PLAYLIST_COUNT_SELECTOR);
 	if (!playlistCountElement) {
 		chrome.runtime.sendMessage({
@@ -85,8 +79,7 @@ async function loadFullPlaylist( onLoaded ) {
 			message: 'Playlist count element not found',
 			severity: 'warning',
 		});
-		onLoaded();
-		return;
+		return null;
 	}
 	const playlistCount = parseInt(playlistCountElement.innerText);
 	if (isNaN(playlistCount)) {
@@ -95,6 +88,17 @@ async function loadFullPlaylist( onLoaded ) {
 			message: 'Playlist count element did not contain a number',
 			severity: 'warning',
 		});
+		return null;
+	}
+	return playlistCount;
+}
+
+async function loadFullPlaylist( onLoaded ) {
+	const MAX_POLL_TIME = 5000;
+	const POLL_INTERVAL = 100;
+
+	const playlistCount = getPlaylistCountFromDomElement();
+	if (playlistCount === null) {
 		onLoaded();
 		return;
 	}
