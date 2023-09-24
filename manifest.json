@@ -3,6 +3,10 @@
 	"name": "YPEE - YouTube Playlist Exporter",
 	"version": "1.0",
 	"description": "Export YouTube playlists and 'Watch Later' to text files.",
+	"developer": {
+		"name": "Gabriel Birke",
+		"url": "https://gabriel-birke.de/"
+	},
 	"permissions": [
 		"activeTab",
 		"scripting",

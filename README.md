@@ -8,10 +8,13 @@ This extension is helpful if you have a long "Watch Later" list that you
 want to expert. While the YouTube API allows reading and exporting regular
 playlists, you can only see the "Watch Later" list in the browser.
 
+If YouTube decides to change the HTML markup of their playlist pages, this
+extension might break.
+
 ## Installing
 
 Currently, this extension is not available at the Chrome Store or Firefox
-Addon Registry. You have to download This repository as a ZIP file,
+Add-On Registry. You have to download this repository as a ZIP file,
 extract it and then follow the browser-specific install instructions.
 
 ### Chrome/Chromium
@@ -24,27 +27,23 @@ containing the extension files.
 
 See https://extensionworkshop.com/documentation/develop/temporary-installation-in-firefox/
 
-
-## TODO / Next steps
-- [x] Render Playlist in popup
-- [x] Show status in popup
-- [x] 2nd field for render template, with buttons to insert different templates:
-  - Markdown
-  - URLs only
-  - CSV
-- [ ] Polish manifest
-  - [ ] Name and description
-  - [ ] Contact information in case of errors
-  - [ ] Icons
-- [ ] Check (and maybe fix) Firefox compatibility
+The extension will only last until you restart Firefox.
 
 ## Future improvements
+
+I might add more features in the future.
 
 - [ ] Copy to clipboard
 - [ ] Format code with some code style
 - [ ] Progress bar when loading multiple pages of playlists.
 - [ ] Save to file
-- [ ] I18N
-- [ ] Style popup
+- [ ] I18N - Translate the text messages to other languages
+- [ ] Improve styling of popup window: Colors, form field sizes, etc.
+- [ ] Add icons
 - [ ] Allow playlist collection from multiple tabs
 - [ ] Export watch history (The watch history is not a playlist)
+
+
+## Used libraries
+
+- https://vanjs.org/ - For some reactive rendering inside the popup.
