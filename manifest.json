@@ -1,8 +1,8 @@
 {
 	"manifest_version": 3,
-	"name": "Export YT Watch Later",
+	"name": "YPEE - YouTube Playlist Exporter",
 	"version": "1.0",
-	"description": "Export YT Watch Later",
+	"description": "Export YouTube playlists and 'Watch Later' to text files.",
 	"permissions": [
 		"activeTab",
 		"scripting",
