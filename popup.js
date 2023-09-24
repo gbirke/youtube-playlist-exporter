@@ -99,12 +99,27 @@ function renderPlaylistResult(response) {
 	playlistArea.value = prefix + response.items.map(item => renderTemplate(template, item)).join('');
 }
 
+function getStatusMessageFromLoadProgress(progressMessage) {
+	const { chunksLoaded, chunksToLoad, lastLoadTime, finished } = progressMessage;
+	if (finished) {
+		return '';
+	}
+	let timeProjection = '';
+	if (lastLoadTime > 0) {
+		const projectedTime = Math.floor((chunksToLoad - chunksLoaded) * lastLoadTime / 1000);
+		timeProjection = `Approx. ${projectedTime} seconds remaining`;
+	}
+	return `Loading the playlist pages, loading page ${chunksLoaded} of ${chunksToLoad}. ${timeProjection}`;
+}
 
 chrome.runtime.onMessage.addListener(function(request) {
 	switch (request.type) {
 		case 'status':
 			setStatusMessage(request.message, request.severity??null);
 			break;
+		case 'load-progress':
+			setStatusMessage(getStatusMessageFromLoadProgress(request), 'info');
+			break
 	}
 });
 

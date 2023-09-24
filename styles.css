@@ -7,6 +7,10 @@
 	padding: 0.5em;
 }
 
+.status-info {
+	background: rgba(0, 0, 255, 0.3)
+}
+
 .status-warning {
 	background: rgba(255, 180, 0, 0.3)
 }

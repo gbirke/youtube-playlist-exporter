@@ -109,12 +109,18 @@ async function loadFullPlaylist( onLoaded ) {
 		return;
 	}
 
-	// TODO send send number of chunks to load to background.js (so it can display progress bar). Default chunk size is 100
+	const chunksToLoad = Math.ceil(playlistCount / YT_CHUNK_SIZE);
+
+	chrome.runtime.sendMessage({
+		type: 'load-progress',
+		chunksLoaded: 0,
+		chunksToLoad: chunksToLoad,
+		numVideos: playlistCount,
+	});
 
 	let pollTime = 0;
 	let lastCount = 0;
 	let lastPollTime = Date.now();
-	const chunksToLoad = Math.ceil(playlistCount / YT_CHUNK_SIZE);
 	while (pollTime < MAX_POLL_TIME) {
 		const playlistItems = document.querySelectorAll(PLAYLIST_ITEM_SELECTOR);
 		const chunksLoaded = Math.ceil(playlistItems.length / YT_CHUNK_SIZE);
@@ -128,8 +134,14 @@ async function loadFullPlaylist( onLoaded ) {
 			const timeSinceLastLengthUpdate = currentTime - lastPollTime;
 			pollTime = Math.min(0, (pollTime - timeSinceLastLengthUpdate) / 2);
 			lastPollTime = currentTime;
-			// TODO send update to background.js with current chunk size and time elapsed, so that it can update the progress bar
-			console.log(`Loaded ${playlistItems.length}, chunk ${chunksLoaded}/${chunksToLoad}`);
+
+			chrome.runtime.sendMessage({
+				type: 'load-progress',
+				chunksLoaded: chunksLoaded,
+				chunksToLoad: chunksToLoad,
+				numVideos: playlistCount,
+				lastLoadTime: timeSinceLastLengthUpdate,
+			});
 		}
 
 		await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL));
@@ -139,13 +151,24 @@ async function loadFullPlaylist( onLoaded ) {
 		// playlistCount is the number of videos in the playlist, but that includes private videos,
 		// even when they are not shown in the list
 		if (chunksLoaded >= chunksToLoad) {
-			// TODO send message to background.js to notify user that loading the playlist has finished loading (to hide progress bar)
+			chrome.runtime.sendMessage({
+				type: 'load-progress',
+				chunksLoaded: chunksLoaded,
+				chunksToLoad: chunksToLoad,
+				numVideos: playlistCount,
+				finished: true
+			});
 			onLoaded();
 			return;
 		}
 	}
-	// TODO send message to background.js to notify user that loading the playlist took too long
-	console.log('Playlist not loaded in time');
+
+	chrome.runtime.sendMessage({
+		type: 'status',
+		message: `Loading the playlist pages took longer than ${Math.floor(MAX_POLL_TIME/1000)} seconds. The playlist may not be fully loaded. Try reloading the page and exporting again. If the problem persist, please report it to the developer`,
+		severity: 'warning',
+	});
+
 	onLoaded();
 }
 
@@ -180,12 +203,10 @@ function onGetPlaylistData(sendResponse) {
 		} )
 	}
 	else {
-		console.log('No playlist found on page, sending response');
 		sendResponse( {
 			status: 'ERROR',
 			message: 'No playlist found on page',
 		});
-		console.log('Response sent');
 	}
 }
 
